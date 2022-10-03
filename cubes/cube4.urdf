@@ -1,0 +1,30 @@
+<robot name="cube4">
+	<link name="baseLink">
+    	<contact>
+      		<lateral_friction value="1.0" />
+      		<rolling_friction value="0.0" />
+      		<contact_cfm value="0.0" />
+      		<contact_erp value="1.0" />
+    	</contact>
+		<visual>
+			<origin rpy="0.0 0.0 0.0" xyz="-0.06995627751590827 0.029970967786357938 -0.09000000089391079" />
+			<geometry>
+				<mesh filename="cubes/cube4.obj" scale="0.01 0.01 0.01" />
+			</geometry>
+			<material name="texture">
+				<color rgba="1.0 1.0 1.0 1.0" />
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0.0 0.0 0.0" xyz="-0.06995627751590827 0.029970967786357938 -0.09000000089391079" />
+			<geometry>
+				<mesh filename="cubes/cube4_vhacd.obj" scale="0.01 0.01 0.01" />
+			</geometry>
+		</collision>
+		<inertial>
+			<origin rpy="0 0 0" xyz="0 0 0" />
+			<mass value="0.5" />
+			<inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+		</inertial>
+	</link>
+</robot>
