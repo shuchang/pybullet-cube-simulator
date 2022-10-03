@@ -50,7 +50,7 @@ class Cube(metaclass=IterRegistry):
     def get_pose(self):
         return self.phy_client.getBasePositionAndOrientation(self.boxId)
 
-    def set_assemble_pose(self):
+    def set_assembly_pose(self):
         if self.boxId != None:
             self.phy_client.resetBasePositionAndOrientation(
                 self.boxId,
@@ -88,14 +88,19 @@ class Cube(metaclass=IterRegistry):
                                            forceObj=force, posObj=current_pos,
                                            flags=p.WORLD_FRAME)
 
-    def is_stable(self):
-        return True if norm(self.startPos - np.array(self.get_pose()[0])) < 0.05 else False
 
 
 def contact_detection(cube_class, max_distance):
     num_cubes = len(cube_class._registry)
     distances = []
     liaison_graph = np.zeros((num_cubes, num_cubes))
+
+    for cube in Cube:
+        cube.set_assembly_pose()
+
+    for _ in range(100):
+        time.sleep(1./240.)
+        p.stepSimulation()
 
     for cube1 in cube_class:
         for cube2 in cube_class:
@@ -108,14 +113,12 @@ def contact_detection(cube_class, max_distance):
                 liaison_graph[cube1.boxId-2, cube2.boxId-2] = 1
                 liaison_graph[cube2.boxId-2, cube1.boxId-2] = 1
 
-            # if len(closest_points) == 0:
-            #     distances.append(max_distance)
-            # else:
-            #     distances.append(np.min([pt[8] for pt in closest_points]))
+    for cube in Cube:
+        cube.reset_start_pose()
 
-            # if (np.array(distances) < max_distance).any():
-            #     liaison_graph[boxId1-2, boxId2-2] = 1
-            #     liaison_graph[boxId2-2, boxId1-2] = 1
+    for _ in range(100):
+        time.sleep(1./240.)
+        p.stepSimulation()
 
     return liaison_graph
 
@@ -130,17 +133,16 @@ def collision_detection(cube_class):
             if cube1.boxId == cube2.boxId:
                 continue
 
-            cube1.set_assemble_pose()
-            cube2.set_assemble_pose()
-            assemble_pos2 = cube2.assemblePos
+            cube1.set_assembly_pose()
+            cube2.set_assembly_pose()
 
             for _ in range(100):
-                cube1.set_assemble_pose()
+                cube1.set_assembly_pose()
                 cube2.move_cube(direction="+z")
-                time.sleep(1./120.)
+                # time.sleep(1./120.)
                 p.stepSimulation()
 
-            finalPos, finalOrn = cube2.get_pose()
+            finalPos, _ = cube2.get_pose()
             posDiff = np.array(finalPos) - np.array(cube2.assemblePos)
             if posDiff[0]**2+posDiff[1]**2 > 0.1 or posDiff[2] < 1:
                 print("cube [boxId:{}] blocked by cube [boxId:{}]".
@@ -179,13 +181,10 @@ def main():
         time.sleep(1./240.)
         p.stepSimulation()
 
-
     collision_map = collision_detection(Cube)
     liaison_graph = contact_detection(Cube, 0.01)
 
     p.disconnect()
-
-
 
 
 if __name__ == "__main__":
