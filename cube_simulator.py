@@ -18,7 +18,7 @@ def initializeGUI():
 
     pb_client.setAdditionalSearchPath(pybullet_data.getDataPath())
     pb_client.setGravity(0, 0, -10)
-    pb_client.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=20, cameraPitch=-30,
+    pb_client.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=20, cameraPitch=-60,
                                          cameraTargetPosition=(0, 0, 1))
 
     return pb_client
@@ -96,10 +96,11 @@ def contact_detection(cube_class, max_distance):
     liaison_graph = np.zeros((num_cubes, num_cubes))
 
     for cube in Cube:
+        time.sleep(1.)
         cube.set_assembly_pose()
 
     for _ in range(100):
-        time.sleep(1./240.)
+        time.sleep(1./24.)
         p.stepSimulation()
 
     for cube1 in cube_class:
@@ -117,7 +118,7 @@ def contact_detection(cube_class, max_distance):
         cube.reset_start_pose()
 
     for _ in range(100):
-        time.sleep(1./240.)
+        time.sleep(1./24.)
         p.stepSimulation()
 
     return liaison_graph
@@ -138,9 +139,11 @@ def collision_detection(cube_class):
 
             for _ in range(100):
                 cube1.set_assembly_pose()
+
                 cube2.move_cube(direction="+z")
-                # time.sleep(1./120.)
+                time.sleep(1./120.)
                 p.stepSimulation()
+
 
             finalPos, _ = cube2.get_pose()
             posDiff = np.array(finalPos) - np.array(cube2.assemblePos)
@@ -162,7 +165,7 @@ def main():
     cubeL = Cube([-0.28, 0.05, 0.95], p.getQuaternionFromEuler([0, 0, np.pi/2]), pb_client)
     cubeV = Cube([0.04, -0.11, 1.20], p.getQuaternionFromEuler([0, np.pi/2, np.pi]), pb_client)
     cubeZ = Cube([-0.14, -0.10, 1.14], p.getQuaternionFromEuler([0, np.pi/2, 0]), pb_client)
-    cubeP = Cube([-0.28, 0.14, 1.31], p.getQuaternionFromEuler([np.pi/2, 0, np.pi/2]), pb_client)
+    cubeP = Cube([-0.28, 0.15, 1.31], p.getQuaternionFromEuler([np.pi/2, 0, np.pi/2]), pb_client)
     cubeB = Cube([-0.28, -0.15, 1.25], p.getQuaternionFromEuler([-np.pi/2, 0, -np.pi/2]), pb_client)
     cubeA = Cube([0.00, 0.15, 1.24], p.getQuaternionFromEuler([0, np.pi/2, -np.pi/2]), pb_client)
 
