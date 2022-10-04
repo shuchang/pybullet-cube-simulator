@@ -29,6 +29,9 @@ class IterRegistry(type):
     def __iter__(cls):
         return iter(cls._registry)
 
+    def __reversed__(cls):
+        return reversed(cls._registry)
+
 
 class Cube(metaclass=IterRegistry):
     _registry = []
@@ -114,7 +117,8 @@ def contact_detection(cube_class, max_distance):
                 liaison_graph[cube1.boxId-2, cube2.boxId-2] = 1
                 liaison_graph[cube2.boxId-2, cube1.boxId-2] = 1
 
-    for cube in Cube:
+    for cube in reversed(Cube):
+        time.sleep(1.)
         cube.reset_start_pose()
 
     for _ in range(100):
@@ -184,7 +188,7 @@ def main():
         time.sleep(1./240.)
         p.stepSimulation()
 
-    collision_map = collision_detection(Cube)
+    # collision_map = collision_detection(Cube)
     liaison_graph = contact_detection(Cube, 0.01)
 
     p.disconnect()
