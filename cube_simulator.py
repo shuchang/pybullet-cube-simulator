@@ -8,8 +8,8 @@ from pybullet_utils import bullet_client
 
 
 def initializeGUI():
-    # pb_client = bullet_client.BulletClient(connection_mode=p.DIRECT)
-    pb_client = bullet_client.BulletClient(connection_mode=p.GUI)
+    pb_client = bullet_client.BulletClient(connection_mode=p.DIRECT)
+    # pb_client = bullet_client.BulletClient(connection_mode=p.GUI)
 
     pb_client.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     pb_client.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 0)
@@ -18,13 +18,16 @@ def initializeGUI():
 
     pb_client.setAdditionalSearchPath(pybullet_data.getDataPath())
     pb_client.setGravity(0, 0, -10)
-    pb_client.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=20, cameraPitch=-60,
+    pb_client.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=20, cameraPitch=-40,
                                          cameraTargetPosition=(0, 0, 1))
 
     return pb_client
 
 
 class IterRegistry(type):
+
+    def __len__(cls):
+        return len(cls._registry)
 
     def __iter__(cls):
         return iter(cls._registry)
@@ -94,11 +97,11 @@ class Cube(metaclass=IterRegistry):
 
 
 def contact_detection(cube_class, max_distance):
-    num_cubes = len(cube_class._registry)
+    num_cubes = len(cube_class)
     distances = []
     liaison_graph = np.zeros((num_cubes, num_cubes))
 
-    for cube in Cube:
+    for cube in cube_class:
         time.sleep(1.)
         cube.set_assembly_pose()
 
@@ -117,7 +120,7 @@ def contact_detection(cube_class, max_distance):
                 liaison_graph[cube1.boxId-2, cube2.boxId-2] = 1
                 liaison_graph[cube2.boxId-2, cube1.boxId-2] = 1
 
-    for cube in reversed(Cube):
+    for cube in reversed(cube_class):
         time.sleep(1.)
         cube.reset_start_pose()
 
@@ -129,8 +132,8 @@ def contact_detection(cube_class, max_distance):
 
 
 def collision_detection(cube_class):
-    """Detects collision one by one during disassembly"""
-    num_cubes = len(cube_class._registry)
+    """Detects collision between each pair of cubes during disassembly"""
+    num_cubes = len(cube_class)
     collision_map = np.zeros((num_cubes, num_cubes))
 
     for cube1 in cube_class:
@@ -143,7 +146,6 @@ def collision_detection(cube_class):
 
             for _ in range(100):
                 cube1.set_assembly_pose()
-
                 cube2.move_cube(direction="+z")
                 time.sleep(1./120.)
                 p.stepSimulation()
@@ -152,7 +154,7 @@ def collision_detection(cube_class):
             finalPos, _ = cube2.get_pose()
             posDiff = np.array(finalPos) - np.array(cube2.assemblePos)
             if posDiff[0]**2+posDiff[1]**2 > 0.1 or posDiff[2] < 1:
-                print("cube [boxId:{}] blocked by cube [boxId:{}]".
+                print("cube [boxId:{}] is blocked by cube [boxId:{}]".
                 format(cube2.boxId, cube1.boxId))
                 collision_map[cube1.boxId - 2, cube2.boxId - 2] = 1
 
@@ -162,6 +164,40 @@ def collision_detection(cube_class):
     return collision_map
 
 
+def stability_analysis(cube_class):
+    """Analyzes the stability of each pair of cubes"""
+    num_cubes = len(cube_class)
+    stability_map = np.zeros((num_cubes, num_cubes))
+
+    for cube1 in cube_class:
+        for cube2 in cube_class:
+            if cube1.boxId == cube2.boxId:
+                continue
+
+            cube1.set_assembly_pose()
+            cube2.set_assembly_pose()
+
+            for _ in range(200):
+                # if cube2.boxId == 6 and cube1.boxId == 4:
+                    # print(".")
+                cube1.set_assembly_pose()
+                time.sleep(1./120.)
+                p.stepSimulation()
+
+            finalPos, finalOrn = cube2.get_pose()
+            ornDiff = np.array(finalOrn) - np.array(cube2.assembleOrn)
+            posDiff = np.array(finalPos) - np.array(cube2.assemblePos)
+            if not norm(posDiff) > 0.05:
+                print("cube [boxId:{}] is stable with cube [boxId:{}]".
+                format(cube2.boxId, cube1.boxId))
+                stability_map[cube2.boxId - 2, cube1.boxId - 2] = 1
+
+            cube2.reset_start_pose()
+        cube1.reset_start_pose()
+
+    return stability_map
+
+
 def main():
     pb_client = initializeGUI()
 
@@ -169,9 +205,9 @@ def main():
     cubeL = Cube([-0.28, 0.05, 0.95], p.getQuaternionFromEuler([0, 0, np.pi/2]), pb_client)
     cubeV = Cube([0.04, -0.11, 1.20], p.getQuaternionFromEuler([0, np.pi/2, np.pi]), pb_client)
     cubeZ = Cube([-0.14, -0.10, 1.14], p.getQuaternionFromEuler([0, np.pi/2, 0]), pb_client)
-    cubeP = Cube([-0.28, 0.15, 1.31], p.getQuaternionFromEuler([np.pi/2, 0, np.pi/2]), pb_client)
-    cubeB = Cube([-0.28, -0.15, 1.25], p.getQuaternionFromEuler([-np.pi/2, 0, -np.pi/2]), pb_client)
+    cubeB = Cube([-0.29, -0.15, 1.25], p.getQuaternionFromEuler([-np.pi/2, 0, -np.pi/2]), pb_client)
     cubeA = Cube([0.00, 0.15, 1.24], p.getQuaternionFromEuler([0, np.pi/2, -np.pi/2]), pb_client)
+    cubeP = Cube([-0.28, 0.15, 1.31], p.getQuaternionFromEuler([np.pi/2, 0, np.pi/2]), pb_client)
 
     p.loadURDF("plane.urdf")
     p.loadURDF("table/table.urdf", [0, 0, -1], globalScaling=3)
@@ -188,8 +224,9 @@ def main():
         time.sleep(1./240.)
         p.stepSimulation()
 
+    # liaison_graph = contact_detection(Cube, 0.01)
     # collision_map = collision_detection(Cube)
-    liaison_graph = contact_detection(Cube, 0.01)
+    stability_map = stability_analysis(Cube)
 
     p.disconnect()
 
