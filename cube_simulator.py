@@ -18,7 +18,7 @@ def initializeGUI():
 
     pb_client.setAdditionalSearchPath(pybullet_data.getDataPath())
     pb_client.setGravity(0, 0, -10)
-    pb_client.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=20, cameraPitch=-40,
+    pb_client.resetDebugVisualizerCamera(cameraDistance=1.8, cameraYaw=0, cameraPitch=-89,
                                          cameraTargetPosition=(0, 0, 1))
     return pb_client
 
@@ -56,6 +56,9 @@ class Cube(metaclass=IterRegistry):
         return self.pb_client.getBasePositionAndOrientation(self.boxId)
 
     def set_assembly_pose(self):
+        if self.boxId == None:
+            print("cube not loaded ...")
+            return
         self.pb_client.resetBasePositionAndOrientation(
             self.boxId,
             self.assemblyPos,
@@ -120,7 +123,6 @@ def contact_detection(cube_class, max_distance):
 
 
 def collision_detection(cube_class):
-    # TODO: move cubes in other directions
     """Detects pairwise collision during disassembly"""
     num_cubes = len(cube_class)
     collision_map = np.zeros((num_cubes, num_cubes))
@@ -135,7 +137,7 @@ def collision_detection(cube_class):
             for _ in range(100):
                 cube1.set_assembly_pose()
                 cube2.move_cube()
-                time.sleep(1./50.)
+                time.sleep(1./120.)
                 p.stepSimulation()
 
             finalPos, _ = cube2.get_pose()
@@ -187,40 +189,90 @@ def stability_analysis(cube_class):
 
 def main():
     pb_client = initializeGUI()
-
+    # +z
     cubeT = Cube([0.00, 0.00, 0.97], [0, 0, -np.pi/2], pb_client)
-    cubeL = Cube([-0.28, 0.05, 0.97], [0, 0, np.pi/2], pb_client)
-    cubeV = Cube([0.04, -0.11, 1.21], [0, np.pi/2, np.pi], pb_client)
-    cubeZ = Cube([-0.14, -0.10, 1.15], [0, np.pi/2, 0], pb_client)
-    cubeB = Cube([-0.29, -0.15, 1.25], [-np.pi/2, 0, -np.pi/2], pb_client)
+    cubeL = Cube([-.28, 0.05, 0.97], [0, 0, np.pi/2], pb_client)
+    cubeV = Cube([0.04, -.11, 1.21], [0, np.pi/2, np.pi], pb_client)
+    cubeZ = Cube([-.14, -.10, 1.15], [0, np.pi/2, 0], pb_client)
+    cubeB = Cube([-.29, -.15, 1.25], [-np.pi/2, 0, -np.pi/2], pb_client)
     cubeA = Cube([0.00, 0.15, 1.24], [0, np.pi/2, -np.pi/2], pb_client)
-    cubeP = Cube([-0.28, 0.15, 1.31], [np.pi/2, 0, np.pi/2], pb_client)
+    cubeP = Cube([-.28, 0.15, 1.31], [np.pi/2, 0, np.pi/2], pb_client)
+
+    # -z
+    # cubeP = Cube([-.28, -.15, 1.01], [0, 0, np.pi], pb_client)
+    # cubeB = Cube([-.29, 0.15, 1.07], [np.pi/2, 0, np.pi/2], pb_client)
+    # cubeA = Cube([0.01, -.16, 1.07], [-np.pi/2, -np.pi/2, 0], pb_client)
+    # cubeZ = Cube([-.13, 0.11, 1.17], [0, np.pi/2, 0], pb_client)
+    # cubeV = Cube([0.07, 0.11, 1.10], [0, -np.pi/2, 0], pb_client)
+    # cubeT = Cube([0.03, -.00, 1.35], [0, 0, -np.pi/2], pb_client)
+    # cubeL = Cube([-.28, -.06, 1.35], [0, np.pi, np.pi/2], pb_client)
+
+    # +y
+    # cubeB = Cube([-.29, -.15, 1.01], [0, 0, np.pi], pb_client)
+    # cubeZ = Cube([-.142, -.048, 1.07], [np.pi/2, 0, np.pi/2], pb_client)
+    # cubeV = Cube([.043, -.11, 1.03], [0, np.pi/2, 0], pb_client)
+    # cubeT = Cube([.010, .148, 1.156], [0, -np.pi/2, -np.pi/2], pb_client)
+    # cubeL = Cube([-.267, .148, 1.210], [0, -np.pi/2, np.pi/2], pb_client)
+    # cubeA = Cube([-.002, -.148, 1.3], [0, np.pi, -np.pi/2], pb_client)
+    # cubeP = Cube([-.294, -.203, 1.30], [np.pi/2, -np.pi/2, np.pi/2], pb_client)
+
+    # -y
+    # cubeP = Cube([-.294, .16, 1.0], [0, 0, np.pi/2], pb_client)
+    # cubeA = Cube([-.002, .09, 1.0], [0, 0, -np.pi/2], pb_client)
+    # cubeL = Cube([-.282, -.19, 1.10], [0, np.pi/2, np.pi/2], pb_client)
+    # cubeT = Cube([-.005, -.19, 1.153], [0, -np.pi/2, -np.pi/2], pb_client)
+    # cubeZ = Cube([-.141, -.001, 1.26], [np.pi/2, 0, np.pi/2], pb_client)
+    # cubeB = Cube([-.29, .115, 1.3], [0, np.pi, 0], pb_client)
+    # cubeV = Cube([.043, .050, 1.28], [np.pi/2, 0, -np.pi/2], pb_client)
+
+    # # +x
+    # cubeP = Cube([-.305, .175, 1.0], [0, 0, np.pi/2], pb_client)
+    # cubeL = Cube([.052, .125, 1.0], [-np.pi/2, 0, np.pi/2], pb_client)
+    # cubeB = Cube([-.243, -.13, 1.0], [0, 0, -np.pi/2], pb_client)
+    # cubeZ = Cube([-.15, -.08, 1.16], [0, 0, 0], pb_client)
+    # cubeA = Cube([-.26, .190, 1.3], [0, np.pi, 0], pb_client)
+    # cubeT = Cube([0.06, .03, 1.3], [np.pi/2, 0, np.pi/2], pb_client)
+    # cubeV = Cube([-.195, -.088, 1.34], [0, 0, -np.pi/2], pb_client)
+
+    # -x
+    # cubeT = Cube([-.20, 0.00, 1.01], [-np.pi/2, 0, np.pi/2], pb_client)
+    # cubeV = Cube([0.06, -.16, 0.97], [0, 0, np.pi], pb_client)
+    # cubeA = Cube([0.13, 0.13, 1.01], [0, 0, 0], pb_client)
+    # cubeZ = Cube([0.01, -.12, 1.16], [0, np.pi, 0], pb_client)
+    # cubeL = Cube([-.21, 0.06, 1.29], [np.pi/2, 0, np.pi/2], pb_client)
+    # cubeB = Cube([0.11, -.19, 1.30], [0, -np.pi/2, -np.pi/2], pb_client)
+    # cubeP = Cube([0.18, 0.11, 1.30], [np.pi/2, 0, 0], pb_client)
+
 
     p.loadURDF("plane.urdf")
     p.loadURDF("table/table.urdf", [0, 0, -1], globalScaling=3)
-    cubeT.load("cubes/cube1.urdf", [-1.6, 1.0, 0.97], [0, 0, 0])
-    cubeL.load("cubes/cube2.urdf", [-0.9, 1.0, 0.97], [0, 0, 0])
-    cubeV.load("cubes/cube3.urdf", [-0.4, 1.0, 0.97], [0, 0, 0])
-    cubeZ.load("cubes/cube4.urdf", [0.2, 1.0, 0.97], [0, 0, 0])
-    cubeB.load("cubes/cube6.urdf", [0.8, 1.0, 1.0], [0, 0, 0])
-    cubeA.load("cubes/cube7.urdf", [1.4, 1.0, 1.0], [0, 0, 0])
-    cubeP.load("cubes/cube5.urdf", [2.0, 1.0, 1.0], [0, 0, 0])
+    cubeT.load("cubes/cube1.urdf", [-1.8, 0.9, .97], [0, 0, 0])
+    cubeL.load("cubes/cube2.urdf", [-1.0, 0.9, .97], [0, 0, 0])
+    cubeV.load("cubes/cube3.urdf", [-0.4, 0.9, .97], [0, 0, 0])
+    cubeZ.load("cubes/cube4.urdf", [0.2, 0.9, .97], [0, 0, 0])
+    cubeB.load("cubes/cube6.urdf", [0.8, 0.9, 1.0], [0, 0, 0])
+    cubeA.load("cubes/cube7.urdf", [1.4, 0.9, 1.0], [0, 0, 0])
+    cubeP.load("cubes/cube5.urdf", [2.0, 0.9, 1.0], [0, 0, 0])
 
     # stabilize the cubes
     for _ in range(100):
         time.sleep(1./240.)
         p.stepSimulation()
 
-    # liaison_graph = contact_detection(Cube, 0.01)
+    # # # test assembly
+    for cube in Cube:
+        cube.set_assembly_pose()
+        for _ in range(100):
+            time.sleep(1./60.)
+            p.stepSimulation()
+        print()
+
+
+
     collision_map = collision_detection(Cube)
     stability_map = stability_analysis(Cube)
+    # liaison_graph = contact_detection(Cube, 0.01)
 
-    # for cube in Cube:
-    #     cube.set_assembly_pose()
-
-    # for _ in range(1000):
-    #     time.sleep(1./240.)
-        # p.stepSimulation()
 
     p.disconnect()
 
