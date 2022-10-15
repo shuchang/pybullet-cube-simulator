@@ -5,6 +5,7 @@ import numpy as np
 
 from numpy.linalg import norm
 from pybullet_utils import bullet_client
+from tqdm import tqdm
 
 
 def initializeGUI():
@@ -99,50 +100,50 @@ def initialCube(direction, pb_client):
         cubeA = Cube([0.00, 0.15, 1.24], [0, np.pi/2, -np.pi/2], pb_client)
         cubeP = Cube([-.28, 0.15, 1.31], [np.pi/2, 0, np.pi/2], pb_client)
     elif direction =="-z":
-        cubeP = Cube([-.28, -.15, 1.01], [0, 0, np.pi], pb_client)
-        cubeB = Cube([-.29, 0.15, 1.07], [np.pi/2, 0, np.pi/2], pb_client)
-        cubeA = Cube([0.01, -.16, 1.07], [-np.pi/2, -np.pi/2, 0], pb_client)
-        cubeZ = Cube([-.13, 0.11, 1.17], [0, np.pi/2, 0], pb_client)
-        cubeV = Cube([0.07, 0.11, 1.10], [0, -np.pi/2, 0], pb_client)
         cubeT = Cube([0.03, -.00, 1.35], [0, 0, -np.pi/2], pb_client)
         cubeL = Cube([-.28, -.06, 1.35], [0, np.pi, np.pi/2], pb_client)
+        cubeZ = Cube([-.13, 0.11, 1.17], [0, np.pi/2, 0], pb_client)
+        cubeV = Cube([0.07, 0.11, 1.10], [0, -np.pi/2, 0], pb_client)
+        cubeB = Cube([-.29, 0.15, 1.07], [np.pi/2, 0, np.pi/2], pb_client)
+        cubeA = Cube([0.01, -.16, 1.07], [-np.pi/2, -np.pi/2, 0], pb_client)
+        cubeP = Cube([-.28, -.15, 1.01], [0, 0, np.pi], pb_client)
     elif direction =="+y":
-        cubeB = Cube([-.29, -.15, 1.01], [0, 0, np.pi], pb_client)
-        cubeZ = Cube([-.142, -.048, 1.07], [np.pi/2, 0, np.pi/2], pb_client)
-        cubeV = Cube([.043, -.11, 1.03], [0, np.pi/2, 0], pb_client)
-        cubeT = Cube([.010, .148, 1.156], [0, -np.pi/2, -np.pi/2], pb_client)
-        cubeL = Cube([-.267, .148, 1.210], [0, -np.pi/2, np.pi/2], pb_client)
-        cubeA = Cube([-.002, -.148, 1.3], [0, np.pi, -np.pi/2], pb_client)
-        cubeP = Cube([-.294, -.203, 1.30], [np.pi/2, -np.pi/2, np.pi/2], pb_client)
+        cubeT = Cube([0.010, 0.148, 1.156], [0, -np.pi/2, -np.pi/2], pb_client)
+        cubeL = Cube([-.267, 0.148, 1.210], [0, -np.pi/2, np.pi/2], pb_client)
+        cubeZ = Cube([-.142, -.048, 1.070], [np.pi/2, 0, np.pi/2], pb_client)
+        cubeV = Cube([0.043, -.110, 1.030], [0, np.pi/2, 0], pb_client)
+        cubeB = Cube([-.290, -.150, 1.010], [0, 0, np.pi], pb_client)
+        cubeA = Cube([-.002, -.148, 1.300], [0, np.pi, -np.pi/2], pb_client)
+        cubeP = Cube([-.294, -.203, 1.300], [np.pi/2, -np.pi/2, np.pi/2], pb_client)
     elif direction == "-y":
-        cubeP = Cube([-.294, 0.160, 1.0], [0, 0, np.pi/2], pb_client)
-        cubeA = Cube([-.002, 0.090, 1.0], [0, 0, -np.pi/2], pb_client)
-        cubeL = Cube([-.282, -.190, 1.10], [0, np.pi/2, np.pi/2], pb_client)
         cubeT = Cube([-.005, -.190, 1.153], [0, -np.pi/2, -np.pi/2], pb_client)
-        cubeZ = Cube([-.141, -.001, 1.26], [np.pi/2, 0, np.pi/2], pb_client)
-        cubeB = Cube([-.290, 0.115, 1.3], [0, np.pi, 0], pb_client)
-        cubeV = Cube([0.043, 0.050, 1.28], [np.pi/2, 0, -np.pi/2], pb_client)
+        cubeL = Cube([-.282, -.190, 1.100], [0, np.pi/2, np.pi/2], pb_client)
+        cubeZ = Cube([-.141, -.001, 1.260], [np.pi/2, 0, np.pi/2], pb_client)
+        cubeV = Cube([0.043, 0.050, 1.280], [np.pi/2, 0, -np.pi/2], pb_client)
+        cubeB = Cube([-.290, 0.115, 1.300], [0, np.pi, 0], pb_client)
+        cubeA = Cube([-.002, 0.090, 1.000], [0, 0, -np.pi/2], pb_client)
+        cubeP = Cube([-.294, 0.160, 1.000], [0, 0, np.pi/2], pb_client)
     elif direction == "+x":
-        cubeP = Cube([-.305, 0.175, 1.0], [0, 0, np.pi/2], pb_client)
-        cubeL = Cube([0.052, 0.125, 1.0], [-np.pi/2, 0, np.pi/2], pb_client)
-        cubeB = Cube([-.243, -.130, 1.0], [0, 0, -np.pi/2], pb_client)
+        cubeT = Cube([0.060, 0.030, 1.30], [np.pi/2, 0, np.pi/2], pb_client)
+        cubeL = Cube([0.052, 0.125, 1.00], [-np.pi/2, 0, np.pi/2], pb_client)
         cubeZ = Cube([-.150, -.080, 1.16], [0, 0, 0], pb_client)
-        cubeA = Cube([-.260, 0.190, 1.3], [0, np.pi, 0], pb_client)
-        cubeT = Cube([0.060, 0.030, 1.3], [np.pi/2, 0, np.pi/2], pb_client)
         cubeV = Cube([-.195, -.088, 1.34], [0, 0, -np.pi/2], pb_client)
+        cubeB = Cube([-.243, -.130, 1.00], [0, 0, -np.pi/2], pb_client)
+        cubeA = Cube([-.260, 0.190, 1.30], [0, np.pi, 0], pb_client)
+        cubeP = Cube([-.305, 0.175, 1.00], [0, 0, np.pi/2], pb_client)
     elif direction == "-x":
         cubeT = Cube([-.20, 0.00, 1.01], [-np.pi/2, 0, np.pi/2], pb_client)
-        cubeV = Cube([0.06, -.16, 0.97], [0, 0, np.pi], pb_client)
-        cubeA = Cube([0.13, 0.13, 1.01], [0, 0, 0], pb_client)
-        cubeZ = Cube([0.01, -.12, 1.16], [0, np.pi, 0], pb_client)
         cubeL = Cube([-.21, 0.06, 1.29], [np.pi/2, 0, np.pi/2], pb_client)
+        cubeZ = Cube([0.01, -.12, 1.16], [0, np.pi, 0], pb_client)
+        cubeV = Cube([0.06, -.16, 0.97], [0, 0, np.pi], pb_client)
         cubeB = Cube([0.11, -.19, 1.30], [0, -np.pi/2, -np.pi/2], pb_client)
+        cubeA = Cube([0.13, 0.13, 1.01], [0, 0, 0], pb_client)
         cubeP = Cube([0.18, 0.11, 1.30], [np.pi/2, 0, 0], pb_client)
 
     cubeT.load("cubes/cube1.urdf", [-1.8, 0.9, .97], [0, 0, 0])
     cubeL.load("cubes/cube2.urdf", [-1.0, 0.9, .97], [0, 0, 0])
-    cubeV.load("cubes/cube3.urdf", [-0.4, 0.9, .97], [0, 0, 0])
-    cubeZ.load("cubes/cube4.urdf", [0.2, 0.9, .97], [0, 0, 0])
+    cubeZ.load("cubes/cube4.urdf", [-0.4, 0.9, .97], [0, 0, 0])
+    cubeV.load("cubes/cube3.urdf", [0.2, 0.9, .97], [0, 0, 0])
     cubeB.load("cubes/cube6.urdf", [0.8, 0.9, 1.0], [0, 0, 0])
     cubeA.load("cubes/cube7.urdf", [1.4, 0.9, 1.0], [0, 0, 0])
     cubeP.load("cubes/cube5.urdf", [2.0, 0.9, 1.0], [0, 0, 0])
@@ -162,16 +163,17 @@ def test_assembly(direction, pb_client):
 
     for cube in cube_class:
         cube.set_assembly_pose()
-        for _ in range(100):
-            time.sleep(1./80.)
-            pb_client.stepSimulation()
+
+    for _ in range(100):
+        time.sleep(1./80.)
+        pb_client.stepSimulation()
 
     pb_client.resetSimulation()
 
 
 def collision_detection(direction, pb_client):
     """Detects pairwise collision during disassembly"""
-    print(f"\n***** check collison in {direction} direction *****")
+    print(f"\n***** collison check in {direction} direction *****")
     pb_client.setGravity(0, 0, -10)
     pb_client.loadURDF("plane.urdf")
     pb_client.loadURDF("table/table.urdf", [0,0,-1], globalScaling=3)
@@ -196,8 +198,8 @@ def collision_detection(direction, pb_client):
             finalPos, _ = cube2.get_pose()
             posDiff = np.array(finalPos) - np.array(cube2.assemblyPos)
             if (posDiff[0]**2 + posDiff[1]**2) > 0.1 or posDiff[2] < 1:
-                collision_map[cube1.boxId - 2, cube2.boxId - 2] = 1
-                print(f"cube[boxId:{cube2.boxId}] is blocked by",
+                collision_map[cube2.boxId - 2, cube1.boxId - 2] = 1
+                print(f"cube[boxId:{cube2.boxId}] collides with",
                       f"cube[boxId:{cube1.boxId}]")
 
             cube2.reset_start_pose()
@@ -237,8 +239,8 @@ def stability_analysis(pb_client):
             posDiff = np.array(finalPos) - np.array(cube2.assemblyPos)
             if not norm(posDiff) > 0.03:
                 stability_matrix[cube2.boxId - 2, cube1.boxId - 2] = 1
-                print(f"cube[boxId:{cube2.boxId}] is stable with",
-                      f"cube[boxId:{cube1.boxId}]'s support")
+                # print(f"cube[boxId:{cube2.boxId}] is stable with",
+                #       f"cube[boxId:{cube1.boxId}]'s support")
 
             cube2.reset_start_pose()
         cube1.reset_start_pose()
@@ -249,24 +251,26 @@ def stability_analysis(pb_client):
 def main():
     pb_client = initializeGUI()
 
-    # test_assembly("+z", pb_client)
-    # test_assembly("-z", pb_client)
-    # test_assembly("+y", pb_client)
-    # test_assembly("-y", pb_client)
-    # test_assembly("+x", pb_client)
-    # test_assembly("-x", pb_client)
+    test_assembly("+z", pb_client)
+    test_assembly("-z", pb_client)
+    test_assembly("+y", pb_client)
+    test_assembly("-y", pb_client)
+    test_assembly("+x", pb_client)
+    test_assembly("-x", pb_client)
 
+    # CM_{ijk} = 1 if cube i collides with cube j in direction k
     collision_matrix = np.zeros((7, 7, 6))
     collision_matrix[:,:,0] = collision_detection("+z", pb_client)
     collision_matrix[:,:,1] = collision_detection("-z", pb_client)
-    collision_matrix[:,:,2] = collision_detection("+z", pb_client)
-    collision_matrix[:,:,3] = collision_detection("-z", pb_client)
-    collision_matrix[:,:,4] = collision_detection("+z", pb_client)
-    collision_matrix[:,:,5] = collision_detection("-z", pb_client)
-    # TODO: generate inference matrix from collision matrices in 6 directions
+    collision_matrix[:,:,2] = collision_detection("+y", pb_client)
+    collision_matrix[:,:,3] = collision_detection("-y", pb_client)
+    collision_matrix[:,:,4] = collision_detection("+x", pb_client)
+    collision_matrix[:,:,5] = collision_detection("-x", pb_client)
 
-    stability_matrix = stability_analysis(pb_client)
+    # AM_{ik} = U_{j=1}^{n} I_{ijk}
+    disassembly_matrix = np.any(collision_matrix, axis=1)
 
+    # stability_matrix = stability_analysis(pb_client)
 
     pb_client.disconnect()
 
