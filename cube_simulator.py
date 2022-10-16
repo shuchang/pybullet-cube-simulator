@@ -6,6 +6,7 @@ import numpy as np
 from numpy.linalg import norm
 from pybullet_utils import bullet_client
 from tqdm import tqdm
+from itertools import combinations
 
 
 def initializeGUI():
@@ -193,7 +194,7 @@ def collision_detection(direction, pb_client):
                 cube1.set_assembly_pose()
                 cube2.move_cube()
                 time.sleep(1./120.)
-                p.stepSimulation()
+                pb_client.stepSimulation()
 
             finalPos, _ = cube2.get_pose()
             posDiff = np.array(finalPos) - np.array(cube2.assemblyPos)
@@ -216,61 +217,62 @@ def stability_analysis(pb_client):
     pb_client.loadURDF("table/table.urdf", [0,0,-1], globalScaling=3)
     cube_class = initialCube("+z", pb_client)
 
-    num_cubes = len(cube_class)
-    stability_matrix = np.zeros((num_cubes, num_cubes))
+    # stabilize the cubes
+    for _ in range(100):
+        pb_client.stepSimulation()
+    stable_subset = []
 
-    for cube1 in cube_class:
-        for cube2 in cube_class:
+    for L in range(len(cube_class) + 1):
+        for subset in combinations(cube_class._registry, L):
+            subsetId = []
 
-            if cube1.boxId == cube2.boxId:
-                cube2.set_assembly_pose()
-                for _ in range(200):
-                    time.sleep(1./240.)
-                    p.stepSimulation()
-            else:
-                cube1.set_assembly_pose()
-                cube2.set_assembly_pose()
-                for _ in range(200):
-                    cube1.set_assembly_pose()
-                    time.sleep(1./240.)
-                    p.stepSimulation()
+            for cube in subset:
+                cube.set_assembly_pose()
+                subsetId.append(cube.boxId - 2)
 
-            finalPos, _ = cube2.get_pose()
-            posDiff = np.array(finalPos) - np.array(cube2.assemblyPos)
-            if not norm(posDiff) > 0.03:
-                stability_matrix[cube2.boxId - 2, cube1.boxId - 2] = 1
-                # print(f"cube[boxId:{cube2.boxId}] is stable with",
-                #       f"cube[boxId:{cube1.boxId}]'s support")
+            for _ in range(200):
+                time.sleep(1./240.)
+                pb_client.stepSimulation()
 
-            cube2.reset_start_pose()
-        cube1.reset_start_pose()
-    pb_client.resetSimulation()
-    return stability_matrix
+            is_stable = True
+            for cube in subset:
+                finalPos, _ = cube.get_pose()
+                posDiff = np.array(finalPos) - np.array(cube.assemblyPos)
+                if norm(posDiff) > 0.03:
+                    is_stable = False
+
+            if is_stable and subsetId != []:
+                stable_subset.append(subsetId)
+
+            for cube in subset:
+                cube.reset_start_pose()
+
+    return stable_subset
 
 
 def main():
     pb_client = initializeGUI()
 
-    test_assembly("+z", pb_client)
-    test_assembly("-z", pb_client)
-    test_assembly("+y", pb_client)
-    test_assembly("-y", pb_client)
-    test_assembly("+x", pb_client)
-    test_assembly("-x", pb_client)
+    # test_assembly("+z", pb_client)
+    # test_assembly("-z", pb_client)
+    # test_assembly("+y", pb_client)
+    # test_assembly("-y", pb_client)
+    # test_assembly("+x", pb_client)
+    # test_assembly("-x", pb_client)
 
-    # CM_{ijk} = 1 if cube i collides with cube j in direction k
-    collision_matrix = np.zeros((7, 7, 6))
-    collision_matrix[:,:,0] = collision_detection("+z", pb_client)
-    collision_matrix[:,:,1] = collision_detection("-z", pb_client)
-    collision_matrix[:,:,2] = collision_detection("+y", pb_client)
-    collision_matrix[:,:,3] = collision_detection("-y", pb_client)
-    collision_matrix[:,:,4] = collision_detection("+x", pb_client)
-    collision_matrix[:,:,5] = collision_detection("-x", pb_client)
+    # # CM_{ijk} = 1 if cube i collides with cube j in direction k
+    # collision_matrix = np.zeros((7, 7, 6))
+    # collision_matrix[:,:,0] = collision_detection("+z", pb_client)
+    # collision_matrix[:,:,1] = collision_detection("-z", pb_client)
+    # collision_matrix[:,:,2] = collision_detection("+y", pb_client)
+    # collision_matrix[:,:,3] = collision_detection("-y", pb_client)
+    # collision_matrix[:,:,4] = collision_detection("+x", pb_client)
+    # collision_matrix[:,:,5] = collision_detection("-x", pb_client)
 
     # AM_{ik} = U_{j=1}^{n} I_{ijk}
-    disassembly_matrix = np.any(collision_matrix, axis=1)
+    # disassembly_matrix = np.any(collision_matrix, axis=1)
 
-    # stability_matrix = stability_analysis(pb_client)
+    stable_subset = stability_analysis(pb_client)
 
     pb_client.disconnect()
 
