@@ -2,7 +2,10 @@ import pybullet as p
 import time
 import pybullet_data
 import numpy as np
+import json
+import gurobipy as gp
 
+from gurobipy import GRB
 from numpy.linalg import norm
 from pybullet_utils import bullet_client
 from tqdm import tqdm
@@ -26,8 +29,13 @@ def initializeGUI():
     return pb_client
 
 
-class IterRegistry(type):
+def initializeEnv(pb_client):
+    pb_client.setGravity(0, 0, -10)
+    pb_client.loadURDF("plane.urdf")
+    pb_client.loadURDF("table/table.urdf", [0,0,-1], globalScaling=3)
 
+
+class IterRegistry(type):
     def __len__(cls):
         return len(cls._registry)
 
@@ -66,12 +74,6 @@ class Cube(metaclass=IterRegistry):
             self.boxId,
             self.assemblyPos,
             self.assemblyOrn)
-
-    def set_target_pose(self, target_pos, target_orn):
-        self.pb_client.resetBasePositionAndOrientation(
-            self.boxId,
-            target_pos,
-            target_orn)
 
     def reset_start_pose(self):
         self.pb_client.resetBasePositionAndOrientation(
@@ -152,15 +154,10 @@ def initialCube(direction, pb_client):
 
 
 def test_assembly(direction, pb_client):
-    pb_client.setGravity(0, 0, -10)
-    pb_client.loadURDF("plane.urdf")
-    pb_client.loadURDF("table/table.urdf", [0,0,-1], globalScaling=3)
+    """Tests assembly configurations"""
+    print(f"\n******** assembly in {direction} direction ********")
+    initializeEnv(pb_client)
     cube_class = initialCube(direction, pb_client)
-
-    # stabilize the cubes
-    for _ in range(100):
-        time.sleep(1./240.)
-        pb_client.stepSimulation()
 
     for cube in cube_class:
         cube.set_assembly_pose()
@@ -168,113 +165,133 @@ def test_assembly(direction, pb_client):
     for _ in range(100):
         time.sleep(1./80.)
         pb_client.stepSimulation()
-
     pb_client.resetSimulation()
 
 
-def collision_detection(direction, pb_client):
+def collision_analysis(direction, pb_client):
     """Detects pairwise collision during disassembly"""
-    print(f"\n***** collison check in {direction} direction *****")
-    pb_client.setGravity(0, 0, -10)
-    pb_client.loadURDF("plane.urdf")
-    pb_client.loadURDF("table/table.urdf", [0,0,-1], globalScaling=3)
+    print(f"\n******** collison in {direction} direction ********")
+    initializeEnv(pb_client)
     cube_class = initialCube(direction, pb_client)
-
-    num_cubes = len(cube_class)
-    collision_map = np.zeros((num_cubes, num_cubes))
+    collision_map = np.zeros((len(cube_class), len(cube_class)))
 
     for cube1 in cube_class:
         for cube2 in cube_class:
-
+            # place two cubes in their assembly pose
             if cube1.boxId == cube2.boxId:
                 continue
             cube1.set_assembly_pose()
             cube2.set_assembly_pose()
+            # run step simulation with one cube fixed
             for _ in range(100):
                 cube1.set_assembly_pose()
                 cube2.move_cube()
                 time.sleep(1./120.)
                 pb_client.stepSimulation()
-
+            # check if there's a position change for the moving cube
             finalPos, _ = cube2.get_pose()
-            posDiff = np.array(finalPos) - np.array(cube2.assemblyPos)
-            if (posDiff[0]**2 + posDiff[1]**2) > 0.1 or posDiff[2] < 1:
+            diff = np.array(finalPos) - np.array(cube2.assemblyPos)
+            if (diff[0]**2 + diff[1]**2) > 0.1 or diff[2] < 1:
                 collision_map[cube2.boxId - 2, cube1.boxId - 2] = 1
                 print(f"cube[boxId:{cube2.boxId}] collides with",
                       f"cube[boxId:{cube1.boxId}]")
-
+            # reset the moving cube to its start pose
             cube2.reset_start_pose()
         cube1.reset_start_pose()
+
     pb_client.resetSimulation()
     return collision_map
 
 
-def stability_analysis(pb_client):
-    # TODO: generate node level stability matrix
+def stability_analysis(direction, pb_client):
     """Analyzes the self and pairwise stability of cubes"""
-    pb_client.setGravity(0, 0, -10)
-    pb_client.loadURDF("plane.urdf")
-    pb_client.loadURDF("table/table.urdf", [0,0,-1], globalScaling=3)
-    cube_class = initialCube("+z", pb_client)
+    print(f"\n******** stability in {direction} direction ********")
+    initializeEnv(pb_client)
+    cube_class = initialCube(direction, pb_client)
+    stable_subsets = []
 
-    # stabilize the cubes
-    for _ in range(100):
-        pb_client.stepSimulation()
-    stable_subset = []
-
-    for L in range(len(cube_class) + 1):
-        for subset in combinations(cube_class._registry, L):
+    for L in tqdm(range(len(cube_class))):
+        for subset in combinations(cube_class._registry, L + 1):
             subsetId = []
-
+            is_stable = True
+            # place a combination of cubes in their assembly pose
             for cube in subset:
                 cube.set_assembly_pose()
                 subsetId.append(cube.boxId - 2)
-
+            # run step simulation
             for _ in range(200):
-                time.sleep(1./240.)
+                # time.sleep(1./240.)
                 pb_client.stepSimulation()
-
-            is_stable = True
+            # check if there's a position change for each cube in the subset
             for cube in subset:
                 finalPos, _ = cube.get_pose()
-                posDiff = np.array(finalPos) - np.array(cube.assemblyPos)
-                if norm(posDiff) > 0.03:
+                diff = np.array(finalPos) - np.array(cube.assemblyPos)
+                if norm(diff) > 0.03:
                     is_stable = False
-
-            if is_stable and subsetId != []:
-                stable_subset.append(subsetId)
-
+            # reset cubes to their start pose
             for cube in subset:
                 cube.reset_start_pose()
+            if is_stable:
+                stable_subsets.append(subsetId)
 
-    return stable_subset
+    with open("data/subassemblies.json", "w") as f:
+        json.dump(stable_subsets, f)
+    return stable_subsets
+
+
+def collision_check(p, s, cm):
+    """Checks collision between part p and subassembly s"""
+    num_collision = 0
+
+    for i in range(6): # check if p collides with any part in the subassembly
+        has_collision = np.any(cm[p, s, i])
+        if has_collision: num_collision += 1
+
+    return num_collision
+
+
+def distance(indice1, indice2, s, cm):
+    """Computes pairwise distance matrix between subassemblies"""
+    dist = 10
+    s1 = set(s[indice1])
+    s2 = set(s[indice2])
+
+    if s1.issubset(s2): # combinations() returns results in sorted order
+        if len(s2) - len(s1) == 1:
+            p = s2 - s1
+            p = list(p)[0] # retrieve the element
+            s1 = list(s1)
+            num_collisions = collision_check(p, s1, cm)
+            dist = num_collisions
+
+    return dist
 
 
 def main():
     pb_client = initializeGUI()
-
-    # test_assembly("+z", pb_client)
-    # test_assembly("-z", pb_client)
-    # test_assembly("+y", pb_client)
-    # test_assembly("-y", pb_client)
-    # test_assembly("+x", pb_client)
-    # test_assembly("-x", pb_client)
-
-    # # CM_{ijk} = 1 if cube i collides with cube j in direction k
-    # collision_matrix = np.zeros((7, 7, 6))
-    # collision_matrix[:,:,0] = collision_detection("+z", pb_client)
-    # collision_matrix[:,:,1] = collision_detection("-z", pb_client)
-    # collision_matrix[:,:,2] = collision_detection("+y", pb_client)
-    # collision_matrix[:,:,3] = collision_detection("-y", pb_client)
-    # collision_matrix[:,:,4] = collision_detection("+x", pb_client)
-    # collision_matrix[:,:,5] = collision_detection("-x", pb_client)
-
-    # AM_{ik} = U_{j=1}^{n} I_{ijk}
-    # disassembly_matrix = np.any(collision_matrix, axis=1)
-
-    stable_subset = stability_analysis(pb_client)
-
+    directions = ["+z", "-z", "+y", "-y", "+x", "-x"]
+    # for direction in directions:
+    #     test_assembly(direction, pb_client)
+    try:
+        subassemblies = json.load(open('data/subassemblies.json'))
+    except:
+        subassemblies = stability_analysis("+z", pb_client)
+    try:
+        # CM_{ijk} = 1 if cube i collides with cube j in direction k
+        collision_matrix = np.load("data/collision_matrix.npy")
+    except:
+        collision_matrix = np.zeros((7, 7, 6))
+        for idx, direction in enumerate(directions):
+            collision_matrix[:,:,idx] = collision_analysis(direction, pb_client)
+        with open("data/collision_matrix.npy", "wb") as f:
+            np.save(f, collision_matrix)
     pb_client.disconnect()
+
+
+    dist = {}
+    for s1, s2 in combinations(range(len(subassemblies)), 2):
+        dist.update({(s1, s2): distance(s1, s2, subassemblies, collision_matrix)})
+    print(dist)
 
 
 if __name__ == "__main__":
